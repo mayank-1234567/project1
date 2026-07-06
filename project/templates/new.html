@@ -10,7 +10,7 @@
     <input type="file" id="fileInput" accept=".pgn" onchange="handleFileSelect(event)">upload PGN file</input>
 
 <link rel="stylesheet"
-href="https://unpkg.com/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css">
+href="{{ url_for('static', filename='chessboard-1.0.0.min.css') }}">
 <script>
     async function handleFileSelect(event) {
         const file = event.target.files[0];
@@ -43,9 +43,9 @@ href="https://unpkg.com/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css"
 </script>
 <div id="board" style="width: 200px"></div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ url_for('static', filename='jquery-3.4.1.min.js') }}"></script>
 
-<script src="https://unpkg.com/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.js"></script>
+<script src="{{ url_for('static', filename='chessboard-1.0.0.min.js') }}"></script>
 
 <script>
 let board = Chessboard('board', {

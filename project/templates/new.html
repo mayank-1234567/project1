@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Board</title>
+</head>
+<body>
+    <input type="file" id="fileInput" accept=".pgn" onchange="handleFileSelect(event)">upload PGN file</input>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='chessboard-1.0.0.min.css') }}">
+<script>
+    async function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const pgnContent = e.target.result;
+
+                const response = await fetch("/upload_pgn", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        pgn: pgnContent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    board.position(data.fen);
+                } else {
+                    alert("Failed to load PGN file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+</script>
+<div id="board" style="width: 200px"></div>
+
+<script src="{{ url_for('static', filename='jquery-3.4.1.min.js') }}"></script>
+
+<script src="{{ url_for('static', filename='chessboard-1.0.0.min.js') }}"></script>
+
+<script>
+let board = Chessboard('board', {
+    draggable: true,
+    position: 'start',
+    onDrop: onDrop
+});
+
+async function onDrop(source, target) {
+
+    const move = source + target;
+
+    const response = await fetch("/move", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            move: move
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        board.position(data.fen);
+    } else {
+        return "snapback";
+    }
+}
+</script>

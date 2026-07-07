@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify,render_template
+from flask import Flask, request, jsonify, render_template
 import torch.nn as nn
 from PIL import Image
 import torch
@@ -41,11 +41,11 @@ class squareNet(nn.Module):
             x=self.classifier(x)
             return x
 
-model=squareNet()
-model.load_state_dict(torch.load("C:/Users/MAYANK PAL/OneDrive/python/proj/model_best.pth",map_location=torch.device('cpu')))
+model = squareNet()
+MODEL_PATH = Path(__file__).with_name("model_best.pth")
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
-transform=transforms.Compose([
-    transforms.ToTensor()])
+transform = transforms.Compose([transforms.ToTensor()])
 ###model space
 
 
@@ -161,10 +161,10 @@ def upload_pdf():
 
                 
                 fent.append(fen)
+    docim.close()
     if len(fent)==0:
         return jsonify(fen=[])
     return jsonify(fen=fent)
-    docim.close()
     
 if __name__ == "__main__":
     app.run(debug=False)

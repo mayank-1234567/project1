@@ -64,6 +64,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 let pdfDocument = null;
 let currentPage = 1;
 let totalPages = 0;
+let buffer = null;
 
 
 const input = document.getElementById("pdfInput");
@@ -96,9 +97,6 @@ async function renderPage(pageNum) {
 
     pageNumber.textContent = pageNum;
 }
-
-let buffer=null
-
 input.addEventListener("change", async () => {
 
     const file = input.files[0];
@@ -107,7 +105,7 @@ input.addEventListener("change", async () => {
 
 
     // Load PDF into PDF.js
-    const buffer = await file.arrayBuffer();
+    buffer = await file.arrayBuffer();
 
 
     pdfDocument = await pdfjsLib.getDocument({
@@ -164,8 +162,13 @@ document.getElementById("prev").onclick = async () => {
         console.error("failed to load ");
     }
     else{
-        data=await response.json();
-        fen=data.fen;
+        const data = await response.json();
+        fen = data.fen;
+        currentboard = 1;
+        totalboard = fen.length;
+        boardNumber.textContent = currentboard;
+        totalBoards.textContent = totalboard;
+        renderBoard(fen, currentboard);
     }
 
 };
@@ -209,8 +212,8 @@ document.getElementById("next").onclick = async () => {
         console.error("failed to load ");
     }
     else{
-        data=await response.json();
-        fen=data.fen;
+        const data = await response.json();
+        fen = data.fen;
         currentboard=1;
         totalboard=fen.length;
         boardNumber.textContent = currentboard;
@@ -252,10 +255,10 @@ function findselection(){
     for(const radio of radios){
         if(radio.checked){
             if (radio.value === "white"){
-                return "w_KQkq_-_0_0";
+                return " w KQkq - 0 1";
             }
             else{
-                return "b_KQkq_-_0_0";
+                return " b KQkq - 0 1";
             }
         }
     }
@@ -268,6 +271,7 @@ function findselection(){
 // Update chess board when fen changes
 
 function renderBoard(fen,currentboard){
+    if (!fen || !fen[currentboard - 1]) return;
 
     document.getElementById("chessBoard").src =
     "https://lichess.org/embed/analysis?fen=" 
@@ -293,6 +297,9 @@ function renderBoard(fen,currentboard){
     <button id="next_board">Next Board</button>
 </div>
 <script>
+    const boardNumber = document.getElementById("boardNumber");
+    const totalBoards = document.getElementById("totalBoards");
+
     document.getElementById("prev_board").onclick =  () => {
 
     if(!pdfDocument) return;

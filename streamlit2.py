@@ -171,10 +171,10 @@ def upload_pdf():
                         
                     
                 
-                fen = r
+                    fen = r
 
                 
-                fent.append(fen)
+                    fent.append(fen)
     docim.close()
     if len(fent)==0:
         return jsonify(fen=[], pdf_id=pdf_id)
@@ -230,10 +230,10 @@ def page_count():
                                 d=0
                               r+=piece_class[predicted_class]
                         
-                fen = r
+                    fen = r
 
                 
-                fent.append(fen)
+                    fent.append(fen)
     docim.close()
     if len(fent)==0:
         return jsonify(fen=[], pdf_id=pdf_id)

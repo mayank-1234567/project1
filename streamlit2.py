@@ -142,29 +142,35 @@ def upload_pdf():
                     continue
                 else:
                     squares=square_crop(cropped[i])
-                    for j in range(1,len(squares)+1):
-                        square=squares[j-1]
-                        square=transform(square)
-                        square=square.unsqueeze(0)
-                        output=model(square)
-                        predicted_class=torch.argmax(output,dim=1).item()
+                    for y in range(8):
                         
-                        if predicted_class==12:
+                        if y!=0:
+                            if d!=0:
+                              r+= str(d)
+                              d=0
+                            r+="/"
+
+                        for x in range (8):
+                        
+                           square=squares[x+y*8]
+                           square=transform(square)
+                           square=square.unsqueeze(0)
+                           output=model(square)
+                           predicted_class=torch.argmax(output,dim=1).item()
+                        
+                        
+                           if predicted_class==12:
                             
-                            d+=1
-                        else:
-                            if d>0:
+                             d+=1
+                           else:
+                             if d>0:
                                 r+=str(d)
                                 d=0
-                            r+=piece_class[predicted_class]
-                        if j==len(squares):
-                           if d > 0:
-                                 r += str(d)
-                        if j%8==0:
-                            r+="/"
+                             r+=piece_class[predicted_class]
+                        
                         
                     
-                r=r.rstrip("/")
+                
                 fen = r
 
                 
@@ -202,27 +208,28 @@ def page_count():
                     continue
                 else:
                     squares=square_crop(cropped[i])
-                    for j in range(1,len(squares)+1):
-                        square=squares[j-1]
-                        square=transform(square)
-                        square=square.unsqueeze(0)
-                        output=model(square)
-                        predicted_class=torch.argmax(output,dim=1).item()
-                        
-                        if predicted_class==12:
-                            
-                            d+=1
-                        else:
-                            if d>0:
+                    for y in range(8):
+                        if y!=0:
+                            if d!=0:
                                 r+=str(d)
                                 d=0
-                            r+=piece_class[predicted_class]
-                        if j==len(squares):
-                           if d > 0:
-                                 r += str(d)
-                        if j%8==0:
                             r+="/"
-                r=r.rstrip("/")
+                        for x in range(8):
+                           square=squares[x+y*8]
+                           square=transform(square)
+                           square=square.unsqueeze(0)
+                           output=model(square)
+                           predicted_class=torch.argmax(output,dim=1).item()
+                        
+                           if predicted_class==12:
+                            
+                              d+=1
+                           else:
+                              if d>0:
+                                r+=str(d)
+                                d=0
+                              r+=piece_class[predicted_class]
+                        
                 fen = r
 
                 

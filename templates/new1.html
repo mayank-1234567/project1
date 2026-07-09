@@ -315,14 +315,14 @@ function findselection(){
 function renderBoard(fen,currentboard){
     if (totalBoards.textContent === "0"){
         document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis";
-        console.log("FEN URL:", "https://lichess.org/embed/analysis");
+        
         return;
     } 
     else {
         document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]);
        
         
-        console.log("FEN URL:", "https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]));
+        
         return;
     }
 

@@ -99,7 +99,7 @@ def board_crop(image):
         area = cv2.contourArea(rect)
         
         if len(rect) == 4 and area > 10000 and area < 1000000:
-            print(f"Contour area: {area}, Number of points: {len(rect)}")
+            
             src = order_points(rect.reshape(4,2))
 
             dst = np.float32([
@@ -167,7 +167,7 @@ def upload_pdf():
     pdf_bytes = base64.b64decode(pdf_base64)
     pdf_id = str(uuid.uuid4())
     pdf_store[pdf_id] = pdf_bytes
-    print(f"PDF stored with ID: {pdf_id}, Size: {len(pdf_bytes)} bytes, Type: {type(pdf_store[pdf_id])}")
+    
     # Open PDF from memory
     docim = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     

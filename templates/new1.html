@@ -149,6 +149,7 @@ input.addEventListener("change", async () => {
     else{
         const data = await response.json();
         fen = data.fen;
+        ext_field = data.ext_field;
         pdf_id1 = data.pdf_id;
         currentboard=1;
         totalboard=fen.length;
@@ -201,6 +202,7 @@ document.getElementById("prev").onclick = async () => {
     else{
         const data = await response.json();
         fen = data.fen;
+        ext_field = data.ext_field;
         currentboard = 1;
         totalboard = fen.length;
         boardNumber.textContent = currentboard;
@@ -252,11 +254,13 @@ document.getElementById("next").onclick = async () => {
     else{
         const data = await response.json();
         fen = data.fen;
+        ext_field = data.ext_field;
         currentboard=1;
         totalboard=fen.length;
         boardNumber.textContent = currentboard;
         totalBoards.textContent = totalboard;
         renderBoard(fen, currentboard);
+        console.log("fen:", fen);
     }
 
 };
@@ -293,10 +297,10 @@ function findselection(){
     for(const radio of radios){
         if(radio.checked){
             if (radio.value === "white"){
-                return " w KQkq - 0 1";
+                return "_w_";
             }
             else{
-                return " b KQkq - 0 1";
+                return "_b_";
             }
         }
     }
@@ -309,18 +313,18 @@ function findselection(){
 // Update chess board when fen changes
 
 function renderBoard(fen,currentboard){
-    if (totalboard===0)
-    {
+    if (totalBoards.textContent === "0"){
         document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis";
+        console.log("FEN URL:", "https://lichess.org/embed/analysis");
         return;
-    };
-   else:{
-    document.getElementById("chessBoard").src =
-    "https://lichess.org/embed/analysis?fen=" 
-    + encodeURIComponent(fen[currentboard-1]+findselection())
-       return;
-   }
-   ;
+    } 
+    else {
+        document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]);
+       
+        
+        console.log("FEN URL:", "https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]));
+        return;
+    }
 
 }
 document.getElementsByName("colour").forEach(radio => {
@@ -348,7 +352,7 @@ document.getElementsByName("colour").forEach(radio => {
     const boardNumber = document.getElementById("boardNumber");
     const totalBoards = document.getElementById("totalBoards");
 
-    document.getElementById("prev_board").onclick =  () => {
+    document.getElementById("prev_board").onclick =  async () => {
 
     if(!pdfDocument) return;
 
@@ -357,7 +361,7 @@ document.getElementsByName("colour").forEach(radio => {
 
     currentboard--;
     boardNumber.textContent = currentboard;
-    renderBoard(fen, currentboard);
+    await renderBoard(fen, currentboard);
 
 };
 
@@ -365,7 +369,7 @@ document.getElementsByName("colour").forEach(radio => {
 
 // Next page
 
-document.getElementById("next_board").onclick = () => {
+document.getElementById("next_board").onclick = async () => {
 
     if(!pdfDocument) return;
 
@@ -374,10 +378,11 @@ document.getElementById("next_board").onclick = () => {
 
     currentboard++;
     boardNumber.textContent = currentboard;
-    renderBoard(fen, currentboard);
+    await renderBoard(fen, currentboard);
 
 };
 
 </script>
 </body>
 </html>
+

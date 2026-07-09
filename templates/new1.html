@@ -309,14 +309,16 @@ function findselection(){
 // Update chess board when fen changes
 
 function renderBoard(fen,currentboard){
-    if (!fen || !fen[currentboard - 1]){
+    if (totalboard===0)
+    {
         document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis";
         return;
     };
-
+   else:{
     document.getElementById("chessBoard").src =
     "https://lichess.org/embed/analysis?fen=" 
     + encodeURIComponent(fen[currentboard-1]+findselection())
+   }
    ;
 
 }

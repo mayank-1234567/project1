@@ -318,6 +318,7 @@ function renderBoard(fen,currentboard){
     document.getElementById("chessBoard").src =
     "https://lichess.org/embed/analysis?fen=" 
     + encodeURIComponent(fen[currentboard-1]+findselection())
+       return;
    }
    ;
 

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer + Chess</title>
+
+    <style>
+        canvas {
+            border: 1px solid rgb(17, 16, 16);
+            width: 100%;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Upload PDF</h2>
+
+<input type="file" id="pdfInput" accept="application/pdf">
+
+
+
+
+<canvas id="pdfCanvas"></canvas>
+
+<div>
+    <button id="prev">Previous</button>
+
+    Page:
+    <span id="pageNumber">0</span>
+    /
+    <span id="totalPages">0</span>
+
+    <button id="next">Next</button>
+</div>
+
+<h2>Chess Board</h2>
+<div>
+    <input type="radio" name="colour" value="white" checked>
+    <label for="white">White</label>
+    <input type="radio" name="colour" value="black">
+    <label for="black">Black</label>
+</div>
+<iframe 
+    id="chessBoard"
+    style="width:100%; aspect-ratio:4/3;"
+    frameborder="0">
+</iframe>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let pdfDocument = null;
+let currentPage = 1;
+let totalPages = 0;
+let buffer = null;
+
+
+const input = document.getElementById("pdfInput");
+const canvas = document.getElementById("pdfCanvas");
+const ctx = canvas.getContext("2d");
+
+const pageNumber = document.getElementById("pageNumber");
+const totalPagesElement = document.getElementById("totalPages");
+
+
+
+async function renderPage(pageNum) {
+
+    const page = await pdfDocument.getPage(pageNum);
+
+    const viewport = page.getViewport({
+        scale: 1.5
+    });
+
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+
+    await page.render({
+        canvasContext: ctx,
+        viewport: viewport
+    }).promise;
+
+
+    pageNumber.textContent = pageNum;
+    return pageNum;
+}
+let pdfBase64 = "";
+
+let pdf_id1=null
+input.addEventListener("change", async () => {
+
+    const file = input.files[0];
+
+    if (!file) return;
+
+
+    // Load PDF into PDF.js
+    buffer = await file.arrayBuffer();
+    pdfBase64 = await arrayBufferToBase64(buffer);
+
+
+    pdfDocument = await pdfjsLib.getDocument({
+        data: buffer
+    }).promise;
+
+
+    totalPages = pdfDocument.numPages;
+
+    totalPagesElement.textContent = totalPages;
+
+
+    currentPage = 1;
+
+    renderPage(currentPage);
+    
+
+    const response = await fetch("/upload_pdf", {
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            pdf:pdfBase64
+        })
+
+    });
+    
+
+    if(!response.ok){
+        console.error("failed to load ");
+    }
+    else{
+        const data = await response.json();
+        fen = data.fen;
+        ext_field = data.ext_field;
+        pdf_id1 = data.pdf_id;
+        currentboard=1;
+        totalboard=fen.length;
+        boardNumber.textContent = currentboard;
+        totalBoards.textContent = totalboard;
+        renderBoard(fen, currentboard);
+    }
+
+}
+)
+
+    // Upload PDF to backend
+    
+
+
+// Previous page
+
+document.getElementById("prev").onclick = async () => {
+
+    if(!pdfDocument) return;
+
+    if(currentPage <= 1) return;
+
+
+    currentPage--;
+    currentboard=1;
+    await renderPage(currentPage);
+    
+
+
+    const response = await fetch("/page_count", {
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            page_count:currentPage,
+            pdf_id:pdf_id1
+        })
+
+    });
+
+
+    if(!response.ok){
+        console.error("failed to load ");
+    }
+    else{
+        const data = await response.json();
+        fen = data.fen;
+        ext_field = data.ext_field;
+        currentboard = 1;
+        totalboard = fen.length;
+        boardNumber.textContent = currentboard;
+        totalBoards.textContent = totalboard;
+        renderBoard(fen, currentboard);
+    }
+
+};
+
+let currentboard = 1;
+let totalboard = 0;
+let fen = [];
+
+// Next page
+
+document.getElementById("next").onclick = async () => {
+
+    if(!pdfDocument) return;
+
+    if(currentPage >= totalPages) return;
+
+
+    currentPage++;
+    currentboard=1;
+
+    await renderPage(currentPage);
+   
+
+
+    const response = await fetch("/page_count", {
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            page_count:currentPage,
+            pdf_id:pdf_id1
+        })
+
+    });
+    
+
+    if(!response.ok){
+        console.error("failed to load ");
+    }
+    else{
+        const data = await response.json();
+        fen = data.fen;
+        ext_field = data.ext_field;
+        currentboard=1;
+        totalboard=fen.length;
+        boardNumber.textContent = currentboard;
+        totalBoards.textContent = totalboard;
+        renderBoard(fen, currentboard);
+        console.log("fen:", fen);
+    }
+
+};
+
+
+
+
+// Convert PDF binary to base64 for upload
+
+function arrayBufferToBase64(buffer){
+
+    let binary = '';
+
+    const bytes = new Uint8Array(buffer);
+
+    for(let i=0;i<bytes.byteLength;i++){
+
+        binary += String.fromCharCode(bytes[i]);
+
+    }
+
+    return btoa(binary);
+}
+
+
+
+</script>
+
+
+
+<script>
+function findselection(){
+    const radios = document.getElementsByName("colour");
+    for(const radio of radios){
+        if(radio.checked){
+            if (radio.value === "white"){
+                return "_w_";
+            }
+            else{
+                return "_b_";
+            }
+        }
+    }
+}
+// Example FEN state
+
+
+
+
+// Update chess board when fen changes
+
+function renderBoard(fen,currentboard){
+    if (totalBoards.textContent === "0"){
+        document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis";
+        console.log("FEN URL:", "https://lichess.org/embed/analysis");
+        return;
+    } 
+    else {
+        document.getElementById("chessBoard").src ="https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]);
+       
+        
+        console.log("FEN URL:", "https://lichess.org/embed/analysis?fen=" + (fen[currentboard-1]+findselection()+ext_field[currentboard-1]));
+        return;
+    }
+
+}
+document.getElementsByName("colour").forEach(radio => {
+    radio.addEventListener("change", () => {
+        renderBoard(fen, currentboard);
+    });
+});
+
+// Example:
+// renderBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1);
+
+
+</script>
+<div id="board" style="width: 400px">
+
+    <button id="prev_board">Previous Board</button>
+    board:
+    <span id="boardNumber">0</span>
+    /
+    <span id="totalBoards">0</span>
+
+    <button id="next_board">Next Board</button>
+</div>
+<script>
+    const boardNumber = document.getElementById("boardNumber");
+    const totalBoards = document.getElementById("totalBoards");
+
+    document.getElementById("prev_board").onclick =  async () => {
+
+    if(!pdfDocument) return;
+
+    if(currentboard <= 1) return;
+
+
+    currentboard--;
+    boardNumber.textContent = currentboard;
+    await renderBoard(fen, currentboard);
+
+};
+
+
+
+// Next page
+
+document.getElementById("next_board").onclick = async () => {
+
+    if(!pdfDocument) return;
+
+    if(currentboard >= totalboard) return;
+
+
+    currentboard++;
+    boardNumber.textContent = currentboard;
+    await renderBoard(fen, currentboard);
+
+};
+
+</script>
+</body>
+</html>

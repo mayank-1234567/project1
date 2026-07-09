@@ -167,7 +167,9 @@ def upload_pdf():
                                 r+=str(d)
                                 d=0
                              r+=piece_class[predicted_class]
-                        
+                           if x==7 and d>0:
+                               r+=str(d)
+                               d=0
                         
                     
                 
@@ -229,7 +231,9 @@ def page_count():
                                 r+=str(d)
                                 d=0
                               r+=piece_class[predicted_class]
-                        
+                           if x==7 and d>0:
+                               r+=str(d)
+                               d=0
                     fen = r
 
                 

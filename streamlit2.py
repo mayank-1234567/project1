@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 import base64
 import pymupdf
+import chess
 piece_class=["k","q","r","b","n","p","K","Q","R","B","N","P","empty"]
 
 class squareNet(nn.Module):
@@ -47,58 +48,106 @@ model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
 transform = transforms.Compose([transforms.ToTensor()])
 ###model space
+def order_points(pts):
+    pts = np.array(pts, dtype="float32")
 
+    s = pts.sum(axis=1)
+    diff = np.diff(pts, axis=1)
+
+    ordered = np.zeros((4,2), dtype="float32")
+
+    ordered[0] = pts[np.argmin(s)]      # top-left
+    ordered[2] = pts[np.argmax(s)]      # bottom-right
+    ordered[1] = pts[np.argmin(diff)]   # top-right
+    ordered[3] = pts[np.argmax(diff)]   # bottom-left
+
+    return ordered
 
 def board_crop(image):
-    image=np.array(image)
-    ####takes an image and returns a list of cropped images of the board
-    gray=cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
-    blur=cv2.GaussianBlur(gray,(5,5),0)
-    gray=cv2.equalizeHist(blur)
-    thre4=cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
-    contours,heir= cv2.findContours(thre4,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    contours1=sorted(contours,key=cv2.contourArea,reverse=True)
-    approx=[]
-    X=[]
-    Y=[]
-    W=[]
-    H=[]
-    cropped=[]
-    for cnt in contours1:
-        epsilon=0.02*cv2.arcLength(cnt,True)
-        rect=cv2.approxPolyDP(cnt,epsilon=epsilon,closed=True)
-        area=cv2.contourArea(rect)
-        if len(rect)==4 and area>30000 :
-           approx.append(rect)
-           x,y,w,h=cv2.boundingRect(rect)
-           if x!=0 and y!=0:
-                X.append(x)
-                Y.append(y)
-                H.append(h)
-                W.append(w)
-                
-    for i in range(len(X)):
-            
-            cropped.append(image[Y[i]:Y[i]+H[i],X[i]:X[i]+W[i]])
+   
 
-         
+    image = np.array(image)
+
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5,5), 0)
+    gray = cv2.equalizeHist(blur)
+
+    thre4 = cv2.adaptiveThreshold(
+        gray,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        11,
+        2
+    )
+
+    contours, heir = cv2.findContours(
+        thre4,
+        cv2.RETR_TREE,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    cropped = []
+
+    for cnt in contours:
+
+        epsilon = 0.02 * cv2.arcLength(cnt, True)
+        rect = cv2.approxPolyDP(cnt, epsilon, True)
+
+        area = cv2.contourArea(rect)
         
+        if len(rect) == 4 and area > 10000 and area < 1000000:
+            print(f"Contour area: {area}, Number of points: {len(rect)}")
+            src = order_points(rect.reshape(4,2))
+
+            dst = np.float32([
+                [0,0],
+                [799,0],
+                [799,799],
+                [0,799]
+            ])
+
+            M = cv2.getPerspectiveTransform(src, dst)
+
+            warped = cv2.warpPerspective(image, M, (800,800))
+
+            cropped.append(warped)
 
     return cropped
 def square_crop(cropped):
         ###takes a list of cropped images and returns a list of cropped images of the squares
         squares=[]
         cropped = Image.fromarray(cropped)
-        crop_r=cropped.resize((800,800),Image.LANCZOS)
+        
         sw=100
         sh=100
         for y in range(8):
             for x in range(8):
-               square=crop_r.crop((x*sw,y*sh,(x+1)*sw,(y+1)*sh))
+               square=cropped.crop((x*sw,y*sh,(x+1)*sw,(y+1)*sh))
                squares.append(square)
         return squares
 
- 
+def piece_at(piece_placement, square):
+    board = {}
+
+    ranks = piece_placement.split('/')
+
+    for rank_index, rank in enumerate(ranks):
+        file_index = 0
+
+        for ch in rank:
+            if ch.isdigit():
+                file_index += int(ch)
+            else:
+                file = chr(ord('a') + file_index)
+                board[f"{file}{8 - rank_index}"] = ch
+                file_index += 1
+
+    return board.get(square)
+
+# Example
 
 app = Flask(__name__)
 @app.route("/")
@@ -126,6 +175,7 @@ def upload_pdf():
 
 
     fent=[]
+    ext_field=[]
     with torch.inference_mode():
         
             page=docim.load_page(0)
@@ -167,20 +217,33 @@ def upload_pdf():
                                 r+=str(d)
                                 d=0
                              r+=piece_class[predicted_class]
-                           if x==7 and d>0:
-                               r+=str(d)
-                               d=0
+                        
                         
                     
                 
                     fen = r
+                    board = chess.Board(fen+" w - - 0 1")
+                    bord=chess.Board(fen+" b - - 0 1")
 
-                
-                    fent.append(fen)
+                    if board.is_valid() or bord.is_valid():
+                        fent.append(fen)
+                        c=""
+                        if piece_at(fen,"e1")=="K":
+                            if piece_at(fen,"h1")=="R":
+                              c+="K"
+                            if piece_at(fen,"a1")=="R":
+                              c+="Q"
+                        if piece_at(fen,"e8")=="k":
+                            if piece_at(fen,"h8")=="r":
+                              c+="k"
+                            if piece_at(fen,"a8")=="r":
+                              c+="q"
+                        c+="_-_0_1"
+                        ext_field.append(c)
     docim.close()
     if len(fent)==0:
-        return jsonify(fen=[], pdf_id=pdf_id)
-    return jsonify(fen=fent, pdf_id=pdf_id)
+        return jsonify(fen=[], pdf_id=pdf_id, ext_field=ext_field)
+    return jsonify(fen=fent, pdf_id=pdf_id, ext_field=ext_field)
 @app.route("/page_count", methods=["POST"])
 def page_count():
     
@@ -193,6 +256,7 @@ def page_count():
     print(type(pdf_bytes))
     print(len(pdf_bytes))
     fent=[]
+    ext_field=[]
     docim = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     with torch.inference_mode():
         
@@ -211,36 +275,61 @@ def page_count():
                 else:
                     squares=square_crop(cropped[i])
                     for y in range(8):
+                        
                         if y!=0:
                             if d!=0:
-                                r+=str(d)
-                                d=0
+                              r+= str(d)
+                              d=0
                             r+="/"
-                        for x in range(8):
+
+                        for x in range (8):
+                        
                            square=squares[x+y*8]
                            square=transform(square)
                            square=square.unsqueeze(0)
                            output=model(square)
                            predicted_class=torch.argmax(output,dim=1).item()
                         
+                        
                            if predicted_class==12:
                             
-                              d+=1
+                             d+=1
                            else:
-                              if d>0:
+                             if d>0:
                                 r+=str(d)
                                 d=0
-                              r+=piece_class[predicted_class]
+                             r+=piece_class[predicted_class]
                            if x==7 and d>0:
-                               r+=str(d)
-                               d=0
+                                r+=str(d)
+                                d=0
+                        
+                        
+                    
+                
                     fen = r
 
                 
                     fent.append(fen)
+                   
+                    c=""
+                    if piece_at(fen,"e1")=="K":
+                        if piece_at(fen,"h1")=="R":
+                          c+="K"
+                        if piece_at(fen,"a1")=="R":
+                          c+="Q"
+                    if piece_at(fen,"e8")=="k":
+                        if piece_at(fen,"h8")=="r":
+                          c+="k"
+                        if piece_at(fen,"a8")=="r":
+                    
+                          c+="q"
+                    if c=="":
+                        c+="-"
+                    c+="_-_0_1"
+                    ext_field.append(c)
     docim.close()
     if len(fent)==0:
-        return jsonify(fen=[], pdf_id=pdf_id)
-    return jsonify(fen=fent, pdf_id=pdf_id)
+        return jsonify(fen=[], pdf_id=pdf_id, ext_field=ext_field)
+    return jsonify(fen=fent, pdf_id=pdf_id, ext_field=ext_field)
 if __name__ == "__main__":
     app.run(debug=False)

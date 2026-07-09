@@ -99,7 +99,7 @@ def board_crop(image):
         area = cv2.contourArea(rect)
         
         if len(rect) == 4 and area > 10000 and area < 1000000:
-            print(f"Contour area: {area}, Number of points: {len(rect)}")
+            
             src = order_points(rect.reshape(4,2))
 
             dst = np.float32([
@@ -167,7 +167,7 @@ def upload_pdf():
     pdf_bytes = base64.b64decode(pdf_base64)
     pdf_id = str(uuid.uuid4())
     pdf_store[pdf_id] = pdf_bytes
-    print(f"PDF stored with ID: {pdf_id}, Size: {len(pdf_bytes)} bytes, Type: {type(pdf_store[pdf_id])}")
+    
     # Open PDF from memory
     docim = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     
@@ -305,26 +305,27 @@ def page_count():
                         
                         
                     
-                
                     fen = r
+                    board = chess.Board(fen+" w - - 0 1")
+                    bord=chess.Board(fen+" b - - 0 1")
 
-                
-                    fent.append(fen)
-                   
-                    c=""
-                    if piece_at(fen,"e1")=="K":
-                        if piece_at(fen,"h1")=="R":
-                          c+="K"
-                        if piece_at(fen,"a1")=="R":
-                          c+="Q"
-                    if piece_at(fen,"e8")=="k":
-                        if piece_at(fen,"h8")=="r":
-                          c+="k"
-                        if piece_at(fen,"a8")=="r":
+                    if board.is_valid() or bord.is_valid():
+                       fent.append(fen)
                     
-                          c+="q"
-                    if c=="":
-                        c+="-"
+                        c=""
+                        if piece_at(fen,"e1")=="K":
+                            if piece_at(fen,"h1")=="R":
+                              c+="K"
+                            if piece_at(fen,"a1")=="R":
+                              c+="Q"
+                        if piece_at(fen,"e8")=="k":
+                            if piece_at(fen,"h8")=="r":
+                              c+="k"
+                            if piece_at(fen,"a8")=="r":
+                        
+                              c+="q"
+                         if c=="":
+                            c+="-"
                     c+="_-_0_1"
                     ext_field.append(c)
     docim.close()

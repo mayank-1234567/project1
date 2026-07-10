@@ -207,9 +207,6 @@ try:
 except Exception as exc:
     logger.exception("Failed to initialize ONNX Runtime session")
     INFERENCE_SESSION = None
-    MODEL_INIT_ERROR = str(exc)
-else:
-    MODEL_INIT_ERROR = ""
 
 
 @app.route("/")
@@ -223,7 +220,7 @@ pdf_store = {}
 @app.route("/upload_pdf", methods=["POST"])
 def upload_pdf():
     if INFERENCE_SESSION is None:
-        return jsonify(error=f"Model initialization failed: {MODEL_INIT_ERROR}"), 500
+        return jsonify(error="Model initialization failed"), 500
 
     data = request.json
     pdf_base64 = data["pdf"]
@@ -250,7 +247,7 @@ def upload_pdf():
 @app.route("/page_count", methods=["POST"])
 def page_count():
     if INFERENCE_SESSION is None:
-        return jsonify(error=f"Model initialization failed: {MODEL_INIT_ERROR}"), 500
+        return jsonify(error="Model initialization failed"), 500
 
     data = request.json
     requested_page = data["page_count"]

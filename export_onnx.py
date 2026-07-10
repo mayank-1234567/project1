@@ -55,6 +55,7 @@ def export_model(model: nn.Module, output_path: Path, input_shape: tuple[int, in
         str(output_path),
         opset_version=17,
         do_constant_folding=True,
+        external_data=False,
         input_names=["input"],
         output_names=["logits"],
         dynamic_axes={"input": {0: "batch_size"}, "logits": {0: "batch_size"}},

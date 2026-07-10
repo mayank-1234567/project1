@@ -1,6 +1,6 @@
 flask
-torch
-torchvision
+onnx
+onnxruntime
 pillow
 numpy
 opencv-python-headless

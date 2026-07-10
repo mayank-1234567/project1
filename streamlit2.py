@@ -3,7 +3,7 @@ import logging
 import uuid
 from io import BytesIO
 from pathlib import Path
-
+from cachetools import TTLCache
 import chess
 import cv2
 import numpy as np
@@ -214,8 +214,7 @@ except Exception as exc:
 def home():
     return render_template("new1.html")
 
-
-pdf_store = {}
+pdf_store=TTLCache(maxsize=100,ttl=1800)
 
 
 @app.route("/upload_pdf", methods=["POST"])

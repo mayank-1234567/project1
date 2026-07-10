@@ -163,7 +163,8 @@ def extract_fens_from_page(page: pymupdf.Page, session: ort.InferenceSession) ->
     img_data = BytesIO(pix.tobytes())
     image = Image.open(img_data).convert("RGB")
     cropped = board_crop(image)
-
+    image.close()
+    del image
     fent = []
     ext_field = []
 

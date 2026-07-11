@@ -3,7 +3,7 @@ import logging
 import uuid
 from io import BytesIO
 from pathlib import Path
-
+from cachetools import TTLCache
 import chess
 import cv2
 import numpy as np
@@ -107,7 +107,7 @@ def board_crop(image):
 
         area = cv2.contourArea(rect)
 
-        if len(rect) == 4 and area > 10000 and area < 1000000:
+        if len(rect) == 4 and area > 5000 and area < 1000000:
             src = order_points(rect.reshape(4, 2))
 
             dst = np.float32([
@@ -163,7 +163,8 @@ def extract_fens_from_page(page: pymupdf.Page, session: ort.InferenceSession) ->
     img_data = BytesIO(pix.tobytes())
     image = Image.open(img_data).convert("RGB")
     cropped = board_crop(image)
-
+    image.close()
+    del image
     fent = []
     ext_field = []
 
@@ -213,8 +214,7 @@ except Exception as exc:
 def home():
     return render_template("new1.html")
 
-
-pdf_store = {}
+pdf_store=TTLCache(maxsize=100,ttl=1800)
 
 
 @app.route("/upload_pdf", methods=["POST"])

@@ -7,3 +7,4 @@ opencv-python-headless
 pymupdf
 python-chess
 gunicorn
+cachetools

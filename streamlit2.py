@@ -107,7 +107,7 @@ def board_crop(image):
 
         area = cv2.contourArea(rect)
 
-        if len(rect) == 4 and area > 5000 and area < 1000000:
+        if len(rect) == 4 and area > 500 :
             src = order_points(rect.reshape(4, 2))
 
             dst = np.float32([
